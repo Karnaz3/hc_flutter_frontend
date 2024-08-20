@@ -40,6 +40,9 @@ class _DoctorScreenState extends State<DoctorScreen> {
     var apiService = ApiService();
     getRequests = GetRequests(apiService);
     postRequests = PostRequests(apiService);
+    _fetchAllAppointments();
+    _fetchCompletedAppointments();
+    _fetchCanceledAppointments();
   }
 
   Future<void> _loadDoctorEmail() async {
@@ -225,7 +228,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
-            DrawerHeader(
+            const DrawerHeader(
               decoration: BoxDecoration(
                 color: Colors.blue,
               ),
@@ -291,28 +294,34 @@ class _DoctorScreenState extends State<DoctorScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ElevatedButton(
-              onPressed: _fetchAllAppointments,
-              child: const Text('Get All Appointments'),
-            ),
-            ElevatedButton(
-              onPressed: _fetchCompletedAppointments,
-              child: const Text('Get Completed Appointments'),
-            ),
-            ElevatedButton(
-              onPressed: _fetchCanceledAppointments,
-              child: const Text('Get Canceled Appointments'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildRefreshButton('Appointments', Icons.refresh, _fetchAllAppointments),
+                _buildRefreshButton('Canceled', Icons.refresh, _fetchCanceledAppointments),
+                _buildRefreshButton('Completed', Icons.refresh, _fetchCompletedAppointments),
+              ],
             ),
             const SizedBox(height: 16),
             _buildAppointmentsSection('All Appointments', allAppointments),
             const SizedBox(height: 16),
-            _buildAppointmentsSection(
-                'Completed Appointments', completedAppointments),
+            _buildAppointmentsSection('Completed Appointments', completedAppointments),
             const SizedBox(height: 16),
-            _buildAppointmentsSection(
-                'Canceled Appointments', canceledAppointments),
+            _buildAppointmentsSection('Canceled Appointments', canceledAppointments),
           ],
         ),
+      ),
+    );
+  }
+
+  // Build refresh button
+  Widget _buildRefreshButton(String title, IconData icon, VoidCallback onPressed) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(title),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
       ),
     );
   }
@@ -361,8 +370,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
             DropdownButton<ReportSeverityEnum>(
               hint: const Text("Select Severity"),
               value: selectedSeverity,
-              items:
-                  ReportSeverityEnum.values.map((ReportSeverityEnum severity) {
+              items: ReportSeverityEnum.values.map((ReportSeverityEnum severity) {
                 return DropdownMenuItem<ReportSeverityEnum>(
                   value: severity,
                   child: Text(severity.toString().split('.').last),
@@ -420,19 +428,13 @@ class _DoctorScreenState extends State<DoctorScreen> {
   // Build appointment item
   Widget _buildAppointmentItem(dynamic appointment) {
     final severity = appointment['sevearity'];
-    final appointmentId =
-        appointment['id'].toString(); // Ensure appointmentId is a string
-    final status = appointment[
-        'status']; // Assuming there's a status field in the appointment
-
-    // Log the entire appointment object for debugging
-    print('Appointment Data: $appointment');
+    final appointmentId = appointment['id'].toString();
+    final status = appointment['status'];
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ExpansionTile(
-        title: Text(
-            'Appointment ID: $appointmentId (Part: ${appointment['part']})'),
+        title: Text('Appointment ID: $appointmentId (Part: ${appointment['part']})'),
         children: [
           ListTile(
             title: Text('Part: ${appointment['part']}'),
@@ -441,15 +443,13 @@ class _DoctorScreenState extends State<DoctorScreen> {
               children: [
                 Text('Description: ${appointment['description']}'),
                 Text('Severity: $severity'),
-                Text(
-                    'Status: $status'), // Display the current status of the appointment
+                Text('Status: $status'),
                 Text('Diagnosis: ${appointment['diagnosis'] ?? 'N/A'}'),
                 Text('Prescription: ${appointment['prescription'] ?? 'N/A'}'),
                 _buildUserExpansionTile(appointment['user']),
                 if (appointment['doctor'] != null)
                   _buildDoctorExpansionTile(appointment['doctor']),
                 const SizedBox(height: 16),
-                // Show buttons only if the appointment is in the "Created" state
                 if (status == 'CREATED') ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -465,9 +465,6 @@ class _DoctorScreenState extends State<DoctorScreen> {
                       ),
                     ],
                   ),
-                ] else ...[
-                  Text(
-                      'No actions available for this status: $status'), // Debugging message
                 ],
               ],
             ),
