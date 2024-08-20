@@ -1,8 +1,8 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_test_api_call/network.dart';
+import 'package:intl/intl.dart'; // For date formatting and picker
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart'; // For date formatting and picker
 
 // Enum definitions
 // ignore: constant_identifier_names
@@ -59,12 +59,12 @@ class _DoctorScreenState extends State<DoctorScreen> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       var token = prefs.getString('token');
 
-      var dio = Dio();
-      dio.options.headers['Authorization'] =
+      var apiService = ApiService();
+      apiService.dio.options.headers['Authorization'] =
           'Bearer $token'; // Add Authorization header
 
-      var response =
-          await dio.get('http://192.168.18.71:3000/doctors/appointments/list');
+      var response = await apiService.dio
+          .get('/doctors/appointments/list');
 
       if (response.statusCode == 200) {
         setState(() {
@@ -107,12 +107,12 @@ class _DoctorScreenState extends State<DoctorScreen> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       var token = prefs.getString('token');
 
-      var dio = Dio();
-      dio.options.headers['Authorization'] =
+      var apiService = ApiService();
+      apiService.dio.options.headers['Authorization'] =
           'Bearer $token'; // Add Authorization header
 
-      var response = await dio.post(
-        'http://192.168.18.71:3000/doctors/create-appointment',
+      var response = await apiService.dio.post(
+        '/doctors/create-appointment',
         queryParameters: {
           'email': doctorEmail
         }, // Send email as query parameter

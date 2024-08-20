@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
+import 'package:flutter_test_api_call/network.dart';
 import 'package:flutter_test_api_call/user/userAppointments.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
@@ -60,9 +60,9 @@ class _UserScreenState extends State<UserScreen> {
     });
 
     try {
-      var dio = Dio();
-      var response = await dio.get(
-        'http://192.168.18.71:3000/users/own/appointments',
+      var apiService = ApiService();
+      var response = await apiService.dio.get(
+        '/users/own/appointments',
         queryParameters: {'email': userEmail},
       );
 
@@ -105,9 +105,9 @@ class _UserScreenState extends State<UserScreen> {
     );
 
     try {
-      var dio = Dio();
-      var response = await dio.post(
-        'http://192.168.18.71:3000/users/create-appointment',
+      var apiService = ApiService();
+      var response = await apiService.dio.post(
+        '/users/create-appointment',
         data: appointment.toJson(),
       );
 
