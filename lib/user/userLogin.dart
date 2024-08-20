@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_test_api_call/network.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserLoginPage extends StatefulWidget {
@@ -70,12 +70,11 @@ class _UserLoginPageState extends State<UserLoginPage> {
 
   Future<void> _login() async {
     try {
-      var dio = Dio();
-      var response =
-          await dio.post('http://192.168.18.71:3000/users/login', data: {
-        'email': _emailController.text,
-        'password': _passwordController.text,
-      });
+      var apiService = ApiService();
+       var response = await apiService.dio.post('/users/login', data: {
+      'email': _emailController.text,
+      'password': _passwordController.text,
+    });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Extract token and user's name

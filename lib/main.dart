@@ -3,8 +3,8 @@ import 'package:flutter_test_api_call/doctor/doctor.dart';
 import 'package:flutter_test_api_call/doctor/doctorLogin.dart';
 import 'package:flutter_test_api_call/user/user.dart';
 
-import 'home.dart';
 import 'doctor/register_doctor.dart';
+import 'home.dart';
 import 'user/register_user.dart';
 import 'user/userLogin.dart';
 
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'hc frontend',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),

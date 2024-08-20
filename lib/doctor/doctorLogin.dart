@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_test_api_call/network.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DocLoginPage extends StatefulWidget {
@@ -74,9 +74,9 @@ class _DocLoginPageState extends State<DocLoginPage> {
 
   Future<void> _login() async {
     try {
-      var dio = Dio();
-      var response = await dio.post(
-        'http://192.168.18.71:3000/doctors/login',
+      var apiService = ApiService();
+      var response = await apiService.dio.post(
+        '/doctors/login',
         data: {
           'email': _emailController.text.trim(),
           'password': _passwordController.text,

@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_test_api_call/network.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -97,9 +97,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _register() async {
     try {
-      var dio = Dio();
-      var response =
-          await dio.post('http://192.168.18.71:3000/users/create', data: {
+      var apiService = ApiService();
+      var response = await apiService.dio.post('/users/create', data: {
         'name': _nameController.text,
         'email': _emailController.text,
         'password': _passwordController.text,
