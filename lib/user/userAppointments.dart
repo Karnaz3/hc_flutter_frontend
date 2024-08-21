@@ -73,13 +73,25 @@ class UserAppointment {
     required this.severity,
   });
 
+  // Convert the UserAppointment instance to a JSON-compatible map
   Map<String, dynamic> toJson() {
     return {
       'email': email,
-      'part': part.toString().split('.').last, // Convert enum to string value
+      'part': part.toString().split('.').last, // Enum to string value
       'description': description,
-      'sevearity':
-          severity.toString().split('.').last, // Convert enum to string value
+      'sevearity': severity.toString().split('.').last, // Enum to string value
     };
+  }
+
+  // Create a UserAppointment instance from a JSON-compatible map
+  factory UserAppointment.fromJson(Map<String, dynamic> json) {
+    return UserAppointment(
+      email: json['email'],
+      part: PartsEnum.values
+          .firstWhere((e) => e.toString().split('.').last == json['part']),
+      description: json['description'],
+      severity: ReportSeverityEnum.values
+          .firstWhere((e) => e.toString().split('.').last == json['sevearity']),
+    );
   }
 }
