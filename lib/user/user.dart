@@ -215,6 +215,8 @@ class _UserScreenState extends State<UserScreen> {
       appBar: AppBar(
         title: const Text('Welcome User'),
         automaticallyImplyLeading: true, // Ensure the drawer icon appears
+        centerTitle: true, // Center the title in the AppBar
+        backgroundColor: const Color(0xFF4FC3F7), // Matching with theme
       ),
       drawer: Drawer(
         child: ListView(
@@ -222,7 +224,7 @@ class _UserScreenState extends State<UserScreen> {
           children: <Widget>[
             const DrawerHeader(
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: Color(0xFF4FC3F7), // Matching drawer header color
               ),
               child: Text(
                 'User Menu',
@@ -259,7 +261,20 @@ class _UserScreenState extends State<UserScreen> {
           ],
         ),
       ),
-      body: _buildSelectedTab(),
+      // Apply gradient background
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFFB2EBF2), // Light Cyan
+              Color(0xFF80DEEA), // Light Blue
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: _buildSelectedTab(),
+      ),
     );
   }
 
@@ -272,7 +287,7 @@ class _UserScreenState extends State<UserScreen> {
         return _buildCreateAppointmentForm();
       case 2:
         _logout(); // Call the logout function
-        return const Center(child: Text("Logging out..."));
+        return const Center(child: CircularProgressIndicator());
       default:
         return _buildAppointmentList();
     }
@@ -286,22 +301,18 @@ class _UserScreenState extends State<UserScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildRefreshButton(
-                    'Appointments', Icons.refresh, _fetchAllAppointments),
-                _buildRefreshButton(
-                    'Canceled', Icons.refresh, _fetchCanceledAppointments),
-                _buildRefreshButton(
-                    'Completed', Icons.refresh, _fetchCompletedAppointments),
-              ],
-            ),
+            _buildSectionTitle('All Appointments', _fetchAllAppointments),
             const SizedBox(height: 16),
             _buildAppointmentsSection('All Appointments', allAppointments),
             const SizedBox(height: 16),
+            _buildSectionTitle(
+                'Completed Appointments', _fetchCompletedAppointments),
+            const SizedBox(height: 16),
             _buildAppointmentsSection(
                 'Completed Appointments', completedAppointments),
+            const SizedBox(height: 16),
+            _buildSectionTitle(
+                'Canceled Appointments', _fetchCanceledAppointments),
             const SizedBox(height: 16),
             _buildAppointmentsSection(
                 'Canceled Appointments', canceledAppointments),
@@ -311,26 +322,43 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  // Build refresh button
-  Widget _buildRefreshButton(
-      String title, IconData icon, VoidCallback onPressed) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon),
-      label: Text(title),
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
-      ),
+  Widget _buildSectionTitle(String title, VoidCallback refreshCallback) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        IconButton(
+          icon: const Icon(Icons.refresh, color: Color(0xFF4FC3F7)),
+          onPressed: refreshCallback,
+        ),
+      ],
     );
   }
 
   // Build create appointment tab
   Widget _buildCreateAppointmentForm() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DropdownButton<PartsEnum>(
+          const Text(
+            "Create Appointment",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<PartsEnum>(
+            decoration: InputDecoration(
+              filled: true,
+              fillColor:
+                  Colors.white.withOpacity(0.8), // Adding background color
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
             hint: const Text("Select Part"),
             value: selectedPart,
             items: PartsEnum.values.map((PartsEnum part) {
@@ -345,7 +373,16 @@ class _UserScreenState extends State<UserScreen> {
               });
             },
           ),
-          DropdownButton<ReportSeverityEnum>(
+          const SizedBox(height: 16),
+          DropdownButtonFormField<ReportSeverityEnum>(
+            decoration: InputDecoration(
+              filled: true,
+              fillColor:
+                  Colors.white.withOpacity(0.8), // Adding background color
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
             hint: const Text("Select Severity"),
             value: selectedSeverity,
             items: ReportSeverityEnum.values.map((ReportSeverityEnum severity) {
@@ -360,14 +397,26 @@ class _UserScreenState extends State<UserScreen> {
               });
             },
           ),
+          const SizedBox(height: 16),
           TextField(
             controller: _descriptionController,
-            decoration: const InputDecoration(labelText: 'Description'),
+            decoration: InputDecoration(
+              labelText: 'Description',
+              filled: true,
+              fillColor:
+                  Colors.white.withOpacity(0.8), // Adding background color
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _createAppointment,
             child: const Text('Submit Request'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4FC3F7), // Matching button color
+            ),
           ),
         ],
       ),
@@ -379,11 +428,6 @@ class _UserScreenState extends State<UserScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
         appointments.isEmpty
             ? const Text('No appointments found')
             : ListView.builder(
@@ -410,6 +454,8 @@ class _UserScreenState extends State<UserScreen> {
       child: ExpansionTile(
         title: Text(
             'Appointment ID: $appointmentId (Part: ${appointment['part']})'),
+        backgroundColor:
+            Colors.white.withOpacity(0.8), // Added background color
         children: [
           ListTile(
             title: Text('Part: ${appointment['part']}'),
@@ -429,6 +475,10 @@ class _UserScreenState extends State<UserScreen> {
                       ElevatedButton(
                         onPressed: () => _cancelAppointment(appointmentId),
                         child: const Text('Cancel Appointment'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color(0xFF4FC3F7), // Matching button color
+                        ),
                       ),
                     ],
                   ),
