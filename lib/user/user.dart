@@ -46,9 +46,9 @@ class _UserScreenState extends State<UserScreen> {
     userPostRequests = UserPostRequests(apiService);
 
     if (userEmail.isNotEmpty) {
-      _fetchAllAppointments();
-      _fetchCompletedAppointments();
-      _fetchCanceledAppointments();
+      await _fetchAllAppointments();
+      await _fetchCompletedAppointments();
+      await _fetchCanceledAppointments();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to load user email')),

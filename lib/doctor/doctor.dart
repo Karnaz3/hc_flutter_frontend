@@ -499,7 +499,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
                     children: [
                       ElevatedButton(
                         onPressed: () => _completeAppointment(appointmentId),
-                        child: const Text('Mark as Complete'),
+                        child: const Text('Complete'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               const Color(0xFF4FC3F7), // Matching button color
@@ -508,7 +508,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () => _cancelAppointment(appointmentId),
-                        child: const Text('Cancel Appointment'),
+                        child: const Text('Cancel'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               const Color(0xFF4FC3F7), // Matching button color
