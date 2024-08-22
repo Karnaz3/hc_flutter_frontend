@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test_api_call/doctor/doctor.dart';
 import 'package:flutter_test_api_call/doctor/doctorLogin.dart';
 import 'package:flutter_test_api_call/user/user.dart';
-
-import 'doctor/register_doctor.dart';
-import 'home.dart';
-import 'user/register_user.dart';
-import 'user/userLogin.dart';
+import 'package:flutter_test_api_call/home.dart';
+import 'package:flutter_test_api_call/user/register_user.dart';
+import 'package:flutter_test_api_call/user/userLogin.dart';
+import 'package:flutter_test_api_call/splash_screen.dart';
+import 'package:flutter_test_api_call/doctor/register_doctor.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,13 +18,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'hc frontend',
+      title: 'Remote Health Care',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const HomePage(),
+        '/': (context) => const SplashScreen(),
+        '/home': (context) => const HomePage(),
         '/login': (context) => const UserLoginPage(),
         '/register': (context) => const RegisterPage(),
         '/loginDoctor': (context) => const DocLoginPage(),

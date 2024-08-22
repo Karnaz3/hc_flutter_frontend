@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test_api_call/network.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -113,44 +114,58 @@ class _DocLoginPageState extends State<DocLoginPage> {
   }
 
   Future<void> _login() async {
-    try {
-      var apiService = ApiService();
-      var response = await apiService.dio.post(
-        '/doctors/login',
-        data: {
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text,
-        },
-      );
+  try {
+    var apiService = ApiService();
+    var response = await apiService.dio.post(
+      '/doctors/login',
+      data: {
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text,
+      },
+    );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Extract token, doctor's name, and email
-        var token = response.data['token'];
-        var doctorName = response.data['user']['name'];
-        var doctorEmail = response.data['user']['email'];
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      // Extract token, doctor's name, and email
+      var token = response.data['token'];
+      var doctorName = response.data['user']['name'];
+      var doctorEmail = response.data['user']['email'];
 
-        // Store token, doctor's name, and email in SharedPreferences
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', token);
-        await prefs.setString('doctorName', doctorName);
-        await prefs.setString('doctorEmail', doctorEmail); // Store doctor's email
+      // Store token, doctor's name, and email in SharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
+      await prefs.setString('doctorName', doctorName);
+      await prefs.setString('doctorEmail', doctorEmail);
 
-        // Navigate to doctor's screen
-        Navigator.pushNamed(context, '/doctorScreen');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login failed'),
-          ),
-        );
-      }
-    } catch (e) {
-      print("Error occurred: $e");
+      // Navigate to doctor's screen
+      Navigator.pushNamed(context, '/doctorScreen');
+    } else {
+      // Handle other status codes (e.g., 400, 404)
+      String errorMessage = response.data['message'] ?? 'Login failed';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error occurred: $e'),
+          content: Text(errorMessage),
         ),
       );
     }
+  } on DioException catch (e) {
+    String errorMessage = 'Error occurred: ${e.message}';
+    if (e.response != null && e.response?.statusCode == 404) {
+      errorMessage = 'User not registered. Please check your email or register.';
+    } else if (e.response != null && e.response?.statusCode == 400) {
+      errorMessage = 'Invalid password. Please try again.';
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(errorMessage),
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Unexpected error: $e'),
+      ),
+    );
   }
+}
+
 }
