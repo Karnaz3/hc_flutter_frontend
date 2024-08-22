@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test_api_call/network.dart';
 import 'package:flutter_test_api_call/user/requests/get_requests.dart';
@@ -23,7 +24,7 @@ class _UserScreenState extends State<UserScreen> {
 
   int _selectedIndex = 0; // Selected tab index
 
-  // Form-related variables
+  // Form-related variables for creating appointments
   PartsEnum? selectedPart;
   ReportSeverityEnum? selectedSeverity;
   final _descriptionController = TextEditingController();
@@ -65,7 +66,6 @@ class _UserScreenState extends State<UserScreen> {
         userEmail = decodedToken['email'];
         userName = prefs.getString('userName') ?? 'User';
       });
-      print("Extracted email: $userEmail");
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No token found')),
@@ -83,12 +83,26 @@ class _UserScreenState extends State<UserScreen> {
     try {
       var fetchedAppointments =
           await userGetRequests.fetchUserAppointments(userEmail);
-      setState(() {
-        allAppointments = fetchedAppointments;
-      });
+      if (fetchedAppointments.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No appointments found')),
+        );
+      } else {
+        setState(() {
+          allAppointments = fetchedAppointments;
+        });
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error occurred: ${e.message}';
+      if (e.response != null && e.response?.statusCode == 404) {
+        errorMessage = 'No appointments found for this user.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch all appointments')),
+        SnackBar(content: Text('Unexpected error: $e')),
       );
     } finally {
       setState(() {
@@ -168,16 +182,20 @@ class _UserScreenState extends State<UserScreen> {
         const SnackBar(content: Text('Appointment created successfully')),
       );
       _fetchAllAppointments(); // Refresh appointments
-      setState(() {
-        _descriptionController.clear(); // Clear the form
-        selectedPart = null;
-        selectedSeverity = null;
-      });
+      _clearUpdateForm(); // Clear the form after submission
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to create appointment')),
       );
     }
+  }
+
+  void _clearUpdateForm() {
+    setState(() {
+      selectedPart = null;
+      selectedSeverity = null;
+      _descriptionController.clear();
+    });
   }
 
   Future<void> _cancelAppointment(String appointmentId) async {
@@ -214,7 +232,6 @@ class _UserScreenState extends State<UserScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Welcome User'),
-        automaticallyImplyLeading: true, // Ensure the drawer icon appears
         centerTitle: true, // Center the title in the AppBar
         backgroundColor: const Color(0xFF4FC3F7), // Matching with theme
       ),
@@ -449,41 +466,90 @@ class _UserScreenState extends State<UserScreen> {
     final appointmentId = appointment['id'].toString();
     final status = appointment['status'];
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ExpansionTile(
-        title: Text(
-            'Appointment ID: $appointmentId (Part: ${appointment['part']})'),
-        backgroundColor:
-            Colors.white.withOpacity(0.8), // Added background color
-        children: [
-          ListTile(
-            title: Text('Part: ${appointment['part']}'),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Description: ${appointment['description']}'),
-                Text('Severity: $severity'),
-                Text('Status: $status'),
-                Text('Diagnosis: ${appointment['diagnosis'] ?? 'N/A'}'),
-                Text('Prescription: ${appointment['prescription'] ?? 'N/A'}'),
-                const SizedBox(height: 16),
-                if (status == 'CREATED') ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => _cancelAppointment(appointmentId),
-                        child: const Text('Cancel Appointment'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color(0xFF4FC3F7), // Matching button color
-                        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: ExpansionTile(
+            leading: Icon(
+              Icons.event_available,
+              color: status == 'CREATED' ? Colors.blue : Colors.green,
+            ),
+            title: Text(
+              'Appointment ID: $appointmentId',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black.withOpacity(0.8),
+              ),
+            ),
+            subtitle: Text(
+              'Part: ${appointment['part']}',
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
+            ),
+            backgroundColor: Colors.white.withOpacity(0.9),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDetailRow(Icons.description, 'Description:',
+                        appointment['description']),
+                    _buildDetailRow(Icons.warning, 'Severity:', severity),
+                    _buildDetailRow(Icons.check_circle, 'Status:', status),
+                    _buildDetailRow(Icons.medical_services, 'Diagnosis:',
+                        appointment['diagnosis'] ?? 'N/A'),
+                    _buildDetailRow(Icons.note, 'Prescription:',
+                        appointment['prescription'] ?? 'N/A'),
+                    const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+                    if (status == 'CREATED') ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () => _cancelAppointment(appointmentId),
+                            icon: const Icon(Icons.cancel),
+                            label: const Text('Cancel'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
-              ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.blueAccent, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            '$label ',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
             ),
           ),
         ],

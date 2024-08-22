@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test_api_call/doctor/requests/get_requests.dart';
 import 'package:flutter_test_api_call/doctor/requests/post_requests.dart';
@@ -68,12 +69,30 @@ class _DoctorScreenState extends State<DoctorScreen> {
 
     try {
       var fetchedAppointments = await getRequests.fetchAppointments();
-      setState(() {
-        allAppointments = fetchedAppointments;
-      });
+      if (fetchedAppointments.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No appointments found')),
+        );
+      } else {
+        setState(() {
+          allAppointments = fetchedAppointments;
+        });
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error occurred: ${e.message}';
+      if (e.response != null && e.response?.statusCode == 404) {
+        errorMessage = 'No appointments found for this doctor.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch all appointments')),
+        SnackBar(
+          content: Text('Unexpected error: $e'),
+        ),
       );
     } finally {
       setState(() {
@@ -89,12 +108,30 @@ class _DoctorScreenState extends State<DoctorScreen> {
 
     try {
       var fetchedAppointments = await getRequests.fetchCompletedAppointments();
-      setState(() {
-        completedAppointments = fetchedAppointments;
-      });
+      if (fetchedAppointments.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No completed appointments found')),
+        );
+      } else {
+        setState(() {
+          completedAppointments = fetchedAppointments;
+        });
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error occurred: ${e.message}';
+      if (e.response != null && e.response?.statusCode == 404) {
+        errorMessage = 'No completed appointments found.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch completed appointments')),
+        SnackBar(
+          content: Text('Unexpected error: $e'),
+        ),
       );
     } finally {
       setState(() {
@@ -110,12 +147,30 @@ class _DoctorScreenState extends State<DoctorScreen> {
 
     try {
       var fetchedAppointments = await getRequests.fetchCanceledAppointments();
-      setState(() {
-        canceledAppointments = fetchedAppointments;
-      });
+      if (fetchedAppointments.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No canceled appointments found')),
+        );
+      } else {
+        setState(() {
+          canceledAppointments = fetchedAppointments;
+        });
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Error occurred: ${e.message}';
+      if (e.response != null && e.response?.statusCode == 404) {
+        errorMessage = 'No canceled appointments found.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch canceled appointments')),
+        SnackBar(
+          content: Text('Unexpected error: $e'),
+        ),
       );
     } finally {
       setState(() {
@@ -471,53 +526,103 @@ class _DoctorScreenState extends State<DoctorScreen> {
     final appointmentId = appointment['id'].toString();
     final status = appointment['status'];
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ExpansionTile(
-        title: Text(
-            'Appointment ID: $appointmentId (Part: ${appointment['part']})'),
-        backgroundColor:
-            Colors.white.withOpacity(0.8), // Added background color
-        children: [
-          ListTile(
-            title: Text('Part: ${appointment['part']}'),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Description: ${appointment['description']}'),
-                Text('Severity: $severity'),
-                Text('Status: $status'),
-                Text('Diagnosis: ${appointment['diagnosis'] ?? 'N/A'}'),
-                Text('Prescription: ${appointment['prescription'] ?? 'N/A'}'),
-                _buildUserExpansionTile(appointment['user']),
-                if (appointment['doctor'] != null)
-                  _buildDoctorExpansionTile(appointment['doctor']),
-                const SizedBox(height: 16),
-                if (status == 'CREATED') ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => _completeAppointment(appointmentId),
-                        child: const Text('Complete'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color(0xFF4FC3F7), // Matching button color
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () => _cancelAppointment(appointmentId),
-                        child: const Text('Cancel'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color(0xFF4FC3F7), // Matching button color
-                        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: ExpansionTile(
+            leading: Icon(
+              Icons.event_available,
+              color: status == 'CREATED' ? Colors.blue : Colors.green,
+            ),
+            title: Text(
+              'Appointment ID: $appointmentId',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black.withOpacity(0.8),
+              ),
+            ),
+            subtitle: Text(
+              'Part: ${appointment['part']}',
+              style: const TextStyle(fontSize: 14, color: Colors.black54),
+            ),
+            backgroundColor: Colors.white.withOpacity(0.9),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDetailRow(Icons.description, 'Description:',
+                        appointment['description']),
+                    _buildDetailRow(Icons.warning, 'Severity:', severity),
+                    _buildDetailRow(Icons.check_circle, 'Status:', status),
+                    _buildDetailRow(Icons.medical_services, 'Diagnosis:',
+                        appointment['diagnosis'] ?? 'N/A'),
+                    _buildDetailRow(Icons.note, 'Prescription:',
+                        appointment['prescription'] ?? 'N/A'),
+                    const SizedBox(height: 16),
+                    _buildUserExpansionTile(appointment['user']),
+                    if (appointment['doctor'] != null)
+                      _buildDoctorExpansionTile(appointment['doctor']),
+                    const SizedBox(height: 16),
+                    if (status == 'CREATED') ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () =>
+                                _completeAppointment(appointmentId),
+                            icon: const Icon(Icons.done),
+                            label: const Text('Complete'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: () => _cancelAppointment(appointmentId),
+                            icon: const Icon(Icons.cancel),
+                            label: const Text('Cancel'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
-              ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.blueAccent, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            '$label ',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
             ),
           ),
         ],

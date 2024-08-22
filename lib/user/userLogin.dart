@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test_api_call/network.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -111,7 +112,7 @@ class _UserLoginPageState extends State<UserLoginPage> {
     try {
       var apiService = ApiService();
       var response = await apiService.dio.post('/users/login', data: {
-        'email': _emailController.text,
+        'email': _emailController.text.trim(),
         'password': _passwordController.text,
       });
 
@@ -128,19 +129,32 @@ class _UserLoginPageState extends State<UserLoginPage> {
         // Navigate to user's screen
         Navigator.pushNamed(context, '/userScreen');
       } else {
-        // Login failed
+        // Handle other status codes (e.g., 404 for user not found)
+        String errorMessage = response.data['message'] ?? 'Login failed';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login failed'),
+          SnackBar(
+            content: Text(errorMessage),
           ),
         );
       }
-    } catch (e) {
-      print("Error occurred: $e");
-      // Error occurred
+    } on DioException catch (e) {
+      // Handle DioError specifically
+      String errorMessage = 'Error occurred: ${e.message}';
+      if (e.response != null && e.response?.statusCode == 404) {
+        errorMessage = 'User not found. Please check your email and try again.';
+      } else if (e.response != null && e.response?.statusCode == 400) {
+        errorMessage = 'Invalid password. Please try again.';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error occurred: $e'),
+          content: Text(errorMessage),
+        ),
+      );
+    } catch (e) {
+      // Handle general exceptions
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected error: $e'),
         ),
       );
     }
